@@ -1,0 +1,131 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <SoftwareSerial.h>
+
+#include <MeMCore.h>
+
+MeDCMotor motor_9(9);
+MeDCMotor motor_10(10);
+void move(int direction, int speed)
+{
+      int leftSpeed = 0;
+      int rightSpeed = 0;
+      if(direction == 1){
+        	leftSpeed = speed;
+        	rightSpeed = speed;
+      }else if(direction == 2){
+        	leftSpeed = -speed;
+        	rightSpeed = -speed;
+      }else if(direction == 3){
+        	leftSpeed = -speed;
+        	rightSpeed = speed;
+      }else if(direction == 4){
+        	leftSpeed = speed;
+        	rightSpeed = -speed;
+      }
+      motor_9.run((9)==M1?-(leftSpeed):(leftSpeed));
+      motor_10.run((10)==M1?-(rightSpeed):(rightSpeed));
+}
+double angle_rad = PI/180.0;
+double angle_deg = 180.0/PI;
+void AvoidObstacle();
+double distanceToObstacle;
+MeUltrasonicSensor ultrasonic_3(3);
+MeRGBLed rgbled_7(7, 7==7?2:4);
+void ShutDown();
+void CountDown();
+MeBuzzer buzzer;
+double currentTime = 0;
+double lastTime = 0;
+double getLastTime(){
+    	return currentTime = millis()/1000.0 - lastTime;
+}
+
+void AvoidObstacle()
+{
+    distanceToObstacle = ultrasonic_3.distanceCm();
+    if((distanceToObstacle) < (40)){
+        motor_9.run((9)==M1?-(100):(100));
+        motor_10.run((10)==M1?-(100):(100));
+        if((distanceToObstacle) < (20)){
+            motor_9.run((9)==M1?-(0):(0));
+            motor_10.run((10)==M1?-(0):(0));
+            rgbled_7.setColor(0,60,0,0);
+            rgbled_7.show();
+            if((random(1,(10)+1)) < (6)){
+                rgbled_7.setColor(2,0,60,0);
+                rgbled_7.show();
+                motor_9.run((9)==M1?-(100):(100));
+                motor_10.run((10)==M1?-(-100):(-100));
+                _delay(1);
+            }else{
+                rgbled_7.setColor(1,0,60,0);
+                rgbled_7.show();
+                motor_9.run((9)==M1?-(-100):(-100));
+                motor_10.run((10)==M1?-(100):(100));
+                _delay(1);
+            }
+        }
+    }
+}
+
+void ShutDown()
+{
+    motor_9.run((9)==M1?-(0):(0));
+    motor_10.run((10)==M1?-(0):(0));
+}
+
+void CountDown()
+{
+    for(int __i__=0;__i__<2;++__i__)
+    {
+        rgbled_7.setColor(0,0,60,0);
+        rgbled_7.show();
+        buzzer.tone(523, 500);
+        delay(20);
+        _delay(1);
+        rgbled_7.setColor(0,60,60,0);
+        rgbled_7.show();
+        buzzer.tone(349, 500);
+        delay(20);
+        _delay(1);
+        rgbled_7.setColor(0,0,60,60);
+        rgbled_7.show();
+        buzzer.tone(175, 500);
+        delay(20);
+        _delay(1);
+        rgbled_7.setColor(0,60,0,60);
+        rgbled_7.show();
+        buzzer.tone(131, 500);
+        delay(20);
+        _delay(1);
+    }
+}
+
+void setup(){
+    motor_9.run((9)==M1?-(0):(0));
+    motor_10.run((10)==M1?-(0):(0));
+    lastTime = millis()/1000.0;
+    CountDown();
+    pinMode(A7,INPUT);
+    while(!(((getLastTime()) > (120)) || ((0^(analogRead(A7)>10?0:1)))))
+    {
+        _loop();
+        AvoidObstacle();
+        move(1,255);
+    }
+    ShutDown();
+    lastTime = millis()/1000.0;
+}
+
+void loop(){
+    _loop();
+}
+
+void _delay(float seconds){
+    long endTime = millis() + seconds * 1000;
+    while(millis() < endTime)_loop();
+}
+
+void _loop(){
+}
